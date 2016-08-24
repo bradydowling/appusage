@@ -20,10 +20,21 @@ function showGraphs(file) {
         var fileData = $.csv.toArrays(csv);
         var totalDailyUsage = getTotalDailyUsage(fileData);
         buildUsageChart(totalDailyUsage, "#myChart", defaultOptions);
+        var dailyUsageByApp = getDailyUsageByApp(fileData);
+        buildAppGraphs(dailyUsageByApp);
     };
     reader.onerror = function() {
         alert('Unable to read ' + file.fileName);
     };
+}
+
+function buildAppGraphs(apps) {
+    for (var i in apps) {
+        var mycanvas = document.createElement("canvas");
+        mycanvas.id = i;
+        document.body.appendChild(mycanvas);
+        buildUsageChart(apps[i], "#"+i, defaultOptions);
+    }
 }
 
 
@@ -79,34 +90,14 @@ function getTotalDailyUsage(fileData) {
 function getDailyUsageByApp(fileData) {
     var apps = {};
     var thisApp;
-
     var chart = {};
-    var minutesUsedEachDay = [];
-    var thisDay = fileData[1][1].slice(0, 2);
-    var secondsUsedToday = 0;
-    var days = [];
     for (var i = 1; i < fileData.length; i++) {
         var thisRow = fileData[i];
         thisApp = thisRow[0];
-
-        var theDate = thisRow[1];
-        var dayInRow = theDate.slice(0, 2);
-        var secondsInRow = parseInt(thisRow[3]);
-        var sameDay = dayInRow === thisDay;
-        if (sameDay) {
-            // add the seconds used to the last one
-            secondsUsedToday += secondsInRow;
+        if (!(thisApp in apps)) {
+            apps[thisApp] = [];
         }
-        else { //newDay
-            // overwrite the day
-            thisDay = dayInRow;
-            days.push(dayInRow);
-            // Store today's seconds
-            minutesUsedEachDay.push((secondsUsedToday / 60));
-            secondsUsedToday = secondsInRow;
-        }
+        apps[thisApp].push(thisRow);
     }
-    chart.days = days;
-    chart.minutes = minutesUsedEachDay;
-    return chart;
+    return apps;
 }
